@@ -382,6 +382,27 @@ local function notification(title, content, image, time)
     showNotification(title, content, time)
 end
 
+-- Função segura para copiar para clipboard
+local function safeSetClipboard(text)
+    if typeof(setclipboard) == "function" then
+        setclipboard(text)
+        return true
+    elseif writeclipboard then
+        writeclipboard(text)
+        return true
+    else
+        -- Tentar usar HttpService como fallback para alguns ambientes
+        pcall(function()
+            if HttpService then
+                -- Alguns ambientes podem ter suporte via outras funções
+                -- Apenas avisar que não foi possível copiar
+                warn("Clipboard não disponível neste ambiente")
+            end
+        end)
+        return false
+    end
+end
+
 -- Lista completa de Brainrots conhecidos com valores M/s CORRETOS
 local knownBrainrots = {
     ["Pot Hotspot"] = 2.5,
@@ -857,7 +878,7 @@ createButton("🧠 Scan Stock", function()
     for _, line in ipairs(report) do print(line) end
 
     local clip = table.concat(report, "\n")
-    setclipboard(clip)
+    safeSetClipboard(clip)
 
     notification(
         "Scan concluído",
@@ -881,7 +902,7 @@ createButton("📊 Ver Resumo", function()
     print("╚══════════════════════════════════════════════════════════════╝")
     for _, line in ipairs(report) do print(line) end
 
-    setclipboard(table.concat(report, "\n"))
+    safeSetClipboard(table.concat(report, "\n"))
     notification("Resumo copiado", "Relatório enviado ao clipboard", nil, 3)
 end)
 
@@ -923,7 +944,7 @@ createButton("📄 Export TXT", function()
         savedWhere = "workspace.FLEISHUG_Exports." .. sv.Name .. " (StringValue)"
     end
 
-    setclipboard(text)
+    safeSetClipboard(text)
     notification("Exportado", "TXT gerado e copiado. Local: "..savedWhere, nil, 5)
     print("[FLEISHUG] Export salvo em: "..savedWhere)
 end)
